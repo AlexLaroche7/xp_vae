@@ -1,0 +1,15 @@
+{
+    "nn_config": {
+        "latent_dim": 6,
+        "input_dim": 110,
+        "intermediate_layers": [
+            90,
+            70,
+            50,
+            30,
+            10
+        ],
+        "device": "cuda",
+        "mixed_precision": false
+    }
+}
