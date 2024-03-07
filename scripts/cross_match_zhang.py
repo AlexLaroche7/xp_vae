@@ -2,32 +2,55 @@ import h5py
 import tqdm
 import numpy as np
 from joblib import Parallel, delayed
+from matplotlib import pyplot as plt
+from numba import cuda
 
-# load XP/APOGEE cross-match
-APOGEE_XP_XMATCH_PATH = '../data/xp_apogee_cat.h5'
+import torch
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+#device = 'cpu'
+print('Using %s' % device)
+torch.cuda.empty_cache()
+
+# get source ids from XP/APOGEE cross-match
+APOGEE_XP_XMATCH_PATH = '/geir_data/scr/alaroche/SVAE/xp_apogee_cat.h5'
 f = h5py.File(APOGEE_XP_XMATCH_PATH,'r')['__astropy_table__']
+source_ids = f['ids']
 
-source_ids = f['GAIAEDR3_SOURCE_ID'] # to cross-match with ZGR23 catalogs
+print('Number of source ids: %s' % len(source_ids))
 
-for i in range(1,10):
+# only keep test indices from the above
+from sklearn.model_selection import train_test_split
+validation_split = 0.1 # default value
 
-    subcat_i = i
-    # you will need to download the stellar parameters catalog of ZGR23 to run this script
-    subcat_path = '../../zhang23/stellar_params_catalog_0%s.h5' % subcat_i
+# split up xp data to match training (see xp_vae.model.fit), by index
+idx = np.arange(len(source_ids))
+idx_train,idx_val = train_test_split(idx,test_size=validation_split,random_state=12345)
+
+source_ids_subset = source_ids[idx_val] # to cross-match with ZGR23 catalogs
+
+print('Number of source ids in test subset: %s\n' % len(source_ids_subset))
+
+stellar_params_subset = np.zeros((len(source_ids_subset),5))
+quality_flags_subset = np.zeros(len(source_ids_subset))
+
+for j in range(10):
+    subcat_path = '/yngve_data/zhang23/stellar_params_catalog_0%s.h5' % j
     g = h5py.File(subcat_path, 'r')
     zgr23_source_ids = g['gdr3_source_id']
+    stellar_params_est = np.array(g['stellar_params_est'])
+    quality_flags = g['quality_flags']
 
-    def cross_match_bool(i):
-        if zgr23_source_ids[i] in source_ids:
-            return True
-        else:
-            return False
+    cross_idxs = np.argwhere(np.isin(zgr23_source_ids,source_ids_subset))
+    print('Number of cross-matches:',len(cross_idxs))
 
-    stellar_params_mask = np.array(Parallel(n_jobs=-1,prefer="threads")(delayed(cross_match_bool)(i) for i in tqdm.tqdm(range(len(zgr23_source_ids)))))
-    zgr23_source_ids_to_keep = zgr23_source_ids[stellar_params_mask]
-    stellar_params = g['gdr3_source_id'][stellar_params_mask]
+    for i in tqdm.tqdm(range(len(cross_idxs))):
+        test_idx = np.argwhere(source_ids_subset==zgr23_source_ids[cross_idxs[i]])[0]
+        stellar_params_subset[test_idx] = stellar_params_est[cross_idxs[i]][0]
+        quality_flags_subset[test_idx] = quality_flags[cross_idxs[i]][0]
 
-    print('\nFound %s matches\n for %s' % (len(stellar_params),subcat_path))
-    np.savez('../data/zgr23_cross_match/stellar_params_catalog_0%s_xmatch.npz' % subcat_i,
-            stellar_params=stellar_params,
-            source_ids=source_ids)
+    print('Done %s\n' % subcat_path)
+
+np.savez('/geir_data/scr/alaroche/xp_vae/data/zhang_stellar_params_xmatch2.npz',
+        source_ids=source_ids_subset,
+        stellar_params=stellar_params_subset,
+        quality_flags=quality_flags_subset)
