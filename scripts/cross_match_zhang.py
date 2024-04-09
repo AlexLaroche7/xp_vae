@@ -12,7 +12,7 @@ print('Using %s' % device)
 torch.cuda.empty_cache()
 
 # get source ids from XP/APOGEE cross-match
-APOGEE_XP_XMATCH_PATH = '/geir_data/scr/alaroche/SVAE/xp_apogee_cat.h5'
+APOGEE_XP_XMATCH_PATH = '../data/xp_apogee_cat.h5'
 f = h5py.File(APOGEE_XP_XMATCH_PATH,'r')['__astropy_table__']
 source_ids = f['ids']
 
@@ -50,7 +50,7 @@ for j in range(10):
 
     print('Done %s\n' % subcat_path)
 
-np.savez('/geir_data/scr/alaroche/xp_vae/data/zhang_stellar_params_xmatch2.npz',
+np.savez('/geir_data/scr/alaroche/xp_vae/data/zhang_stellar_params_xmatch.npz',
         source_ids=source_ids_subset,
         stellar_params=stellar_params_subset,
         quality_flags=quality_flags_subset)
