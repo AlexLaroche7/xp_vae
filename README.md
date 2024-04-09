@@ -8,4 +8,4 @@ Data-driven models for stellar spectra which depend on stellar labels suffer fro
 ![model arch](https://github.com/AlexLaroche7/xp_vae/blob/main/figures/svae_arch.png)
 
 ## Reproducing figures
-If you would like to access the data used in this work to reproduce our results, feel free to contact me via [email](mailto:alex.laroche@mail.utoronto.ca).
+All of the data to reproduce our results can be found [here](https://zenodo.org/records/10951393). These files should be placed in the data folder.
