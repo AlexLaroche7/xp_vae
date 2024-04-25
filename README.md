@@ -1,5 +1,5 @@
 # Closing the stellar labels gap: Stellar label independent evidence for [$`\alpha`$/M] information in Gaia BP/RP spectra
-Code for Laroche &amp; Speagle 2024 (in prep)
+Code for Laroche &amp; Speagle 2024
 
 ## Abstract
 
